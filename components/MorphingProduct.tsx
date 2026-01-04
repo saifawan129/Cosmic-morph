@@ -13,10 +13,10 @@ export const MorphingProduct: React.FC<MorphingProductProps> = ({ state }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const coreRef = useRef<THREE.Mesh>(null);
 
-  // Detail level 5-6 is perfectly smooth for an icosahedron. 
-  // Level 15 (previous) was likely crashing the GPU on Vercel/Production.
-  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 6), []);
-  const coreGeometry = useMemo(() => new THREE.SphereGeometry(1, 32, 32), []);
+  // Detail level 4 is the "goldilocks" zone: 
+  // perfectly smooth under distortion but significantly lighter for mobile GPUs.
+  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 4), []);
+  const coreGeometry = useMemo(() => new THREE.SphereGeometry(1, 24, 24), []);
 
   useFrame((clockState) => {
     const time = clockState.clock.getElapsedTime();
@@ -56,7 +56,7 @@ export const MorphingProduct: React.FC<MorphingProductProps> = ({ state }) => {
       <group rotation={[Math.PI / 4, 0, 0]}>
         {Array.from({ length: 12 }).map((_, i) => (
           <mesh key={i} position={[Math.cos(i) * 2.5, Math.sin(i * 0.5) * 0.5, Math.sin(i) * 2.5]}>
-            <sphereGeometry args={[0.05, 8, 8]} />
+            <sphereGeometry args={[0.04, 8, 8]} />
             <meshStandardMaterial color={state.color} emissive={state.color} emissiveIntensity={5} />
           </mesh>
         ))}
