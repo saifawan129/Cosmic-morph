@@ -7,7 +7,6 @@ import {
   Environment, 
   ContactShadows, 
   PerformanceMonitor,
-  BakeShadows,
   Preload
 } from '@react-three/drei';
 import { MorphingProduct } from './MorphingProduct';
@@ -18,21 +17,23 @@ interface SceneProps {
 }
 
 export const Scene: React.FC<SceneProps> = ({ morphState }) => {
-  const [dpr, setDpr] = useState(1.5);
+  // Use a more robust initial DPR for production displays
+  const [dpr, setDpr] = useState(typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1);
 
   const handlePerfDecline = useCallback(() => setDpr(1), []);
-  const handlePerfIncline = useCallback(() => setDpr(2), []);
+  const handlePerfIncline = useCallback(() => setDpr(Math.min(window.devicePixelRatio, 2)), []);
 
   return (
-    <div className="absolute inset-0 w-full h-full">
+    <div className="absolute inset-0 w-full h-full z-10">
       <Canvas 
         shadows 
         dpr={dpr}
-        frameloop="demand" 
+        frameloop="always"
         gl={{ 
           antialias: true, 
           alpha: true,
-          powerPreference: "high-performance" 
+          powerPreference: "high-performance",
+          preserveDrawingBuffer: true
         }}
       >
         <PerformanceMonitor 
@@ -42,18 +43,27 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
         
         <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={45} />
         
+        {/* Core lighting ensures visibility even if environment textures haven't loaded yet */}
+        <ambientLight intensity={0.7} />
+        <pointLight position={[10, 10, 10]} intensity={1.5} />
+        <pointLight position={[-10, -10, -10]} intensity={1} color={morphState.color} />
+        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
+        
+        <MorphingProduct state={morphState} />
+        
         <Suspense fallback={null}>
-          <MorphingProduct state={morphState} />
-          <Environment preset={morphState.environment} />
-          <ContactShadows 
-            opacity={0.4} 
-            scale={10} 
-            blur={2} 
-            far={10} 
-            resolution={256} 
-            color="#000000" 
-          />
+          <Environment preset={morphState.environment || 'city'} />
         </Suspense>
+
+        <ContactShadows 
+          opacity={0.4} 
+          scale={10} 
+          blur={2} 
+          far={10} 
+          resolution={256} 
+          color="#000000" 
+          position={[0, -2.2, 0]}
+        />
 
         <OrbitControls 
           enablePan={false} 
@@ -61,12 +71,9 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
           maxDistance={10} 
           autoRotate 
           autoRotateSpeed={0.5} 
+          makeDefault
         />
-
-        <ambientLight intensity={0.5} />
-        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
         
-        <BakeShadows />
         <Preload all />
       </Canvas>
     </div>

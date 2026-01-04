@@ -1,7 +1,7 @@
 
-import React, { useRef, useMemo } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { MeshDistortMaterial, Sphere, Float, MeshWobbleMaterial } from '@react-three/drei';
+import React, { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { MeshDistortMaterial, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { MorphState } from '../types';
 
@@ -11,53 +11,69 @@ interface MorphingProductProps {
 
 export const MorphingProduct: React.FC<MorphingProductProps> = ({ state }) => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const { invalidate } = useThree();
-
-  // Use useMemo for geometries to ensure stability
-  const geometry = useMemo(() => new THREE.IcosahedronGeometry(1, 15), []);
+  const coreRef = useRef<THREE.Mesh>(null);
 
   useFrame((clockState) => {
+    const time = clockState.clock.getElapsedTime();
     if (meshRef.current) {
-      meshRef.current.rotation.y += 0.005 * state.speed;
-      meshRef.current.rotation.x += 0.002 * state.speed;
-      
-      // If we are in demand mode, we'd call invalidate() here if needed, 
-      // but Float handles continuous animation.
+      meshRef.current.rotation.y = time * 0.1 * (state.speed || 1);
+      meshRef.current.rotation.x = time * 0.05 * (state.speed || 1);
+    }
+    if (coreRef.current) {
+      const pulse = Math.sin(time * 2) * 0.05 + 1;
+      coreRef.current.scale.set(pulse, pulse, pulse);
     }
   });
 
-  return (
-    <Float speed={state.speed * 2} rotationIntensity={1} floatIntensity={2}>
-      <mesh ref={meshRef} scale={state.scale} geometry={geometry}>
-        <MeshDistortMaterial
-          color={state.color}
-          roughness={state.roughness}
-          metalness={state.metalness}
-          distort={state.distort}
-          speed={state.speed}
-        />
-      </mesh>
-      
-      {/* Decorative inner core */}
-      <mesh scale={state.scale * 0.4}>
-        <sphereGeometry args={[1, 32, 32]} />
-        <meshStandardMaterial 
-          color="#ffffff" 
-          emissive={state.color} 
-          emissiveIntensity={2} 
-          toneMapped={false} 
-        />
-      </mesh>
+  const safeScale = typeof state.scale === 'number' ? state.scale : 1.5;
 
-      {/* Orbiting particles */}
-      <group rotation={[Math.PI / 4, 0, 0]}>
-        {Array.from({ length: 12 }).map((_, i) => (
-          <mesh key={i} position={[Math.cos(i) * 2.5, Math.sin(i * 0.5) * 0.5, Math.sin(i) * 2.5]}>
-            <sphereGeometry args={[0.05, 8, 8]} />
-            <meshStandardMaterial color={state.color} emissive={state.color} emissiveIntensity={5} />
-          </mesh>
-        ))}
-      </group>
-    </Float>
+  return (
+    <group scale={[safeScale, safeScale, safeScale]}>
+      <Float 
+        speed={Math.max(0.1, (state.speed || 1.5) * 1.5)} 
+        rotationIntensity={0.8} 
+        floatIntensity={1.5}
+      >
+        {/* Main Morphing Body - Restored to icosahedron as per previous version */}
+        <mesh ref={meshRef} castShadow receiveShadow>
+          <icosahedronGeometry args={[1, 32]} />
+          <MeshDistortMaterial
+            color={state.color || '#4e54c8'}
+            roughness={state.roughness ?? 0.1}
+            metalness={state.metalness ?? 0.8}
+            distort={state.distort ?? 0.4}
+            speed={state.speed ?? 1.5}
+            transparent
+            opacity={0.95}
+          />
+        </mesh>
+        
+        {/* Glowing Inner Core */}
+        <mesh ref={coreRef} scale={[0.35, 0.35, 0.35]}>
+          <sphereGeometry args={[1, 32, 32]} />
+          <meshStandardMaterial 
+            color="#ffffff" 
+            emissive={state.color || '#ffffff'} 
+            emissiveIntensity={3} 
+            toneMapped={false} 
+          />
+        </mesh>
+
+        {/* Orbiting particles */}
+        <group rotation={[Math.PI / 4, 0, 0]}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <mesh key={i} position={[Math.cos(i) * 2.2, Math.sin(i * 0.5) * 0.2, Math.sin(i) * 2.2]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshStandardMaterial 
+                color={state.color} 
+                emissive={state.color} 
+                emissiveIntensity={8} 
+                toneMapped={false}
+              />
+            </mesh>
+          ))}
+        </group>
+      </Float>
+    </group>
   );
 };
