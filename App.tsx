@@ -1,11 +1,10 @@
 
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Scene } from './components/Scene';
 import { MorphState } from './types';
 import { chatWithAssistant } from './geminiService';
 import { createClient } from '@supabase/supabase-js';
 import { 
-  Maximize2, 
   Cpu, 
   Sparkles, 
   RefreshCcw,
@@ -21,9 +20,7 @@ import {
   Zap,
   Mail,
   Send,
-  Globe,
   Activity,
-  ShieldCheck,
   Terminal,
   Layers
 } from 'lucide-react';
@@ -76,22 +73,23 @@ const App: React.FC = () => {
   useEffect(() => {
     let frameCount = 0;
     let lastTime = performance.now();
+    let animationId: number;
     
     const updateStats = () => {
       const now = performance.now();
-      setLatency(now - lastTime);
       frameCount++;
       
       if (now - lastTime >= 1000) {
         setFps(frameCount);
+        setLatency(now - lastTime);
         frameCount = 0;
         lastTime = now;
       }
-      requestAnimationFrame(updateStats);
+      animationId = requestAnimationFrame(updateStats);
     };
     
-    const handle = requestAnimationFrame(updateStats);
-    return () => cancelAnimationFrame(handle);
+    animationId = requestAnimationFrame(updateStats);
+    return () => cancelAnimationFrame(animationId);
   }, []);
 
   const scrollToBottom = () => {
@@ -175,35 +173,20 @@ const App: React.FC = () => {
       
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-         <div className="nebula-layer bg-blue-600/10 w-[100vw] h-[100vw] -top-1/4 -left-1/4" style={{'--speed': '60s'} as any} />
-         <div className="nebula-layer bg-purple-600/10 w-[90vw] h-[90vw] -bottom-1/4 -right-1/4" style={{'--speed': '80s'} as any} />
-         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(1,1,3,0.9)_100%)]" />
-
-         {/* Star Field */}
-         <div className="absolute inset-0 opacity-20">
-           {Array.from({ length: 100 }).map((_, i) => (
-             <div 
-               key={i} 
-               className="star" 
-               style={{
-                 left: `${Math.random() * 100}%`,
-                 top: `${Math.random() * 100}%`,
-                 width: `${Math.random() * 2}px`,
-                 height: `${Math.random() * 2}px`,
-                 "--duration": `${Math.random() * 3 + 2}s`
-               } as any}
-             />
-           ))}
-         </div>
+         <div className="nebula-layer bg-blue-600/5 w-[100vw] h-[100vw] -top-1/4 -left-1/4" style={{'--speed': '90s'} as any} />
+         <div className="nebula-layer bg-purple-600/5 w-[90vw] h-[90vw] -bottom-1/4 -right-1/4" style={{'--speed': '120s'} as any} />
+         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_0%,rgba(1,1,3,0.95)_100%)]" />
+         
+         {/* DOM Stars removed and replaced by WebGL Stars in Scene.tsx */}
       </div>
 
       <Scene morphState={morphState} />
 
-      {/* Production HUD Header */}
+      {/* HUD Header */}
       <header className="absolute top-0 left-0 w-full p-6 lg:p-10 flex justify-between items-start z-50 pointer-events-none ui-enter">
         <div className="pointer-events-auto">
           <div className="flex items-center gap-4 group">
-            <div className="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.2)] backdrop-blur-md">
+            <div className="w-12 h-12 rounded-xl bg-blue-600/10 border border-blue-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.1)] backdrop-blur-md">
               <Layers className="w-6 h-6 text-blue-400" />
             </div>
             <div>
@@ -212,7 +195,7 @@ const App: React.FC = () => {
               </h1>
               <div className="flex items-center gap-2 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                <p className="text-[8px] uppercase tracking-[0.3em] text-green-400 font-mono font-bold">Vercel Deployment Live</p>
+                <p className="text-[8px] uppercase tracking-[0.3em] text-green-400 font-mono font-bold">Performance Optimized</p>
               </div>
             </div>
           </div>
@@ -282,10 +265,9 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        {/* Right Column: AI & Transmission */}
+        {/* Right Column: AI Terminal */}
         <aside className="w-full lg:w-[400px] flex flex-col gap-6 h-full ui-enter" style={{ animationDelay: '0.2s' }}>
           
-          {/* AI Terminal */}
           <div className="pointer-events-auto flex flex-col flex-1 glass-panel rounded-[2.5rem] overflow-hidden border-white/5">
             <div className="px-8 py-5 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
                <div className="flex items-center gap-3">
@@ -335,8 +317,8 @@ const App: React.FC = () => {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleChat()}
-                    placeholder="E.g. 'Make it look like liquid gold'"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-[13px] focus:outline-none focus:border-purple-500 transition-all pr-16 placeholder:opacity-20 font-medium"
+                    placeholder="E.g. 'Liquid gold'"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-[13px] focus:outline-none focus:border-purple-500 pr-16"
                   />
                   <button 
                     onClick={handleChat}
@@ -349,21 +331,15 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Email Transmission */}
+          {/* Email registration */}
           <div className="pointer-events-auto glass-panel p-8 rounded-[2.5rem] border-white/5 relative overflow-hidden group">
-             <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-3xl rounded-full" />
-             
              <div className="flex items-center gap-4 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-cyan-600/10 border border-cyan-500/30 flex items-center justify-center">
                    <Mail className="w-5 h-5 text-cyan-400" />
                 </div>
-                <h2 className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-70">Uplink Registration</h2>
+                <h2 className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-70">Uplink</h2>
              </div>
              
-             <p className="text-[11px] text-white/40 mb-6 leading-relaxed uppercase tracking-wider font-bold">
-               Receive core-level updates and experimental shaders.
-             </p>
-
              <form onSubmit={handleEmailSubmit} className="relative">
                 <input 
                   type="email"
@@ -371,40 +347,34 @@ const App: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ID@ORBIT.LINK"
-                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-6 py-4 text-[12px] font-mono focus:outline-none focus:border-cyan-500 transition-all pr-14 placeholder:opacity-20 uppercase"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-6 py-4 text-[12px] font-mono uppercase"
                 />
                 <button 
                   type="submit"
                   disabled={submittingEmail}
-                  className="absolute right-2 top-2 bottom-2 px-3 bg-cyan-600 rounded-lg hover:bg-cyan-500 transition-all disabled:opacity-50"
+                  className="absolute right-2 top-2 bottom-2 px-3 bg-cyan-600 rounded-lg hover:bg-cyan-500 transition-all"
                 >
                   {submittingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
              </form>
-             
-             <div className="mt-4 h-4">
-                {subscriptionStatus === 'success' && <p className="text-[9px] text-green-400 uppercase font-bold tracking-widest animate-in slide-in-from-bottom-1">Transmission Success.</p>}
-                {subscriptionStatus === 'error' && <p className="text-[9px] text-red-400 uppercase font-bold tracking-widest">Relay Failed.</p>}
-             </div>
           </div>
 
         </aside>
       </div>
 
-      {/* Footer Branding */}
+      {/* Footer */}
       <footer className="absolute bottom-0 left-0 w-full p-8 lg:p-10 flex justify-between items-end pointer-events-none z-50 ui-enter">
         <div className="flex gap-8 text-[9px] font-mono opacity-40 uppercase tracking-[0.4em] font-bold">
            <span className="flex items-center gap-2">
-             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" /> Production Node 01
+             <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" /> Node 01
            </span>
-           <span className="hidden lg:inline">© 2024 Cosmic Studio</span>
         </div>
         <div className="pointer-events-auto">
           <button 
             onClick={() => { setMorphState(INITIAL_STATE); setChatHistory([]); }}
-            className="flex items-center gap-3 text-[10px] font-bold opacity-40 hover:opacity-100 transition-all uppercase tracking-widest bg-white/5 px-6 py-3 rounded-full border border-white/5 hover:border-blue-500/20"
+            className="flex items-center gap-3 text-[10px] font-bold opacity-40 hover:opacity-100 transition-all uppercase bg-white/5 px-6 py-3 rounded-full border border-white/5"
           >
-            <RefreshCcw className="w-4 h-4" /> Reset Workspace
+            <RefreshCcw className="w-4 h-4" /> Reset
           </button>
         </div>
       </footer>
