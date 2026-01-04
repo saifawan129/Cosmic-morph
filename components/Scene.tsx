@@ -7,7 +7,6 @@ import {
   Environment, 
   ContactShadows, 
   PerformanceMonitor,
-  BakeShadows,
   Preload,
   Stars
 } from '@react-three/drei';
@@ -19,22 +18,21 @@ interface SceneProps {
 }
 
 export const Scene: React.FC<SceneProps> = ({ morphState }) => {
-  // Start with a more conservative DPR
   const [dpr, setDpr] = useState(1);
 
-  const handlePerfDecline = useCallback(() => setDpr(0.85), []);
-  const handlePerfIncline = useCallback(() => setDpr(window.devicePixelRatio || 1.5), []);
+  // Targets 40FPS (1000/40 = 25ms frame time)
+  const handlePerfDecline = useCallback(() => setDpr(0.75), []);
+  const handlePerfIncline = useCallback(() => setDpr(1), []);
 
   return (
     <div className="absolute inset-0 w-full h-full">
       <Canvas 
-        shadows 
+        shadows={false} // Disable dynamic shadows for heavy performance boost
         dpr={dpr}
-        frameloop="always" // Switched to always for smoother continuous morphing
         gl={{ 
-          antialias: false, // Disable for performance gain, replaced by DPR
-          alpha: true,
+          antialias: false,
           powerPreference: "high-performance",
+          precision: "lowp", // Drastic performance improvement on mobile/older GPUs
           stencil: false,
           depth: true
         }}
@@ -42,40 +40,39 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
         <PerformanceMonitor 
           onDecline={handlePerfDecline} 
           onIncline={handlePerfIncline} 
+          flipflops={3}
+          bounds={(fps) => (fps < 38 ? [0, 1] : [1, 1])} // Threshold at 38-40 range
         />
         
-        <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={45} />
+        <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={50} />
         
         <Suspense fallback={null}>
-          {/* Efficient WebGL stars instead of DOM elements */}
-          <Stars radius={100} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
+          <Stars radius={50} depth={20} count={800} factor={2} saturation={0} fade speed={0.5} />
           
           <MorphingProduct state={morphState} />
           <Environment preset={morphState.environment} />
           
           <ContactShadows 
-            opacity={0.3} 
-            scale={8} 
-            blur={2.5} 
+            opacity={0.4} 
+            scale={10} 
+            blur={3} 
             far={10} 
-            resolution={128} // Lowered from 256
+            resolution={64} // Very low res for speed
             color="#000000" 
           />
         </Suspense>
 
         <OrbitControls 
           enablePan={false} 
-          minDistance={3} 
-          maxDistance={10} 
-          autoRotate 
-          autoRotateSpeed={0.5} 
+          minDistance={2} 
+          maxDistance={8} 
+          autoRotate={false} 
           makeDefault
         />
 
-        <ambientLight intensity={0.4} />
-        <spotLight position={[5, 10, 5]} angle={0.15} penumbra={1} intensity={1.5} />
+        <ambientLight intensity={0.5} />
+        <pointLight position={[5, 5, 5]} intensity={1} />
         
-        <BakeShadows />
         <Preload all />
       </Canvas>
     </div>
