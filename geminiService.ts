@@ -1,8 +1,14 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { MorphState } from "./types";
+import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Safe API key extraction
+const getApiKey = () => {
+  try {
+    return (window as any).process?.env?.API_KEY || '';
+  } catch {
+    return '';
+  }
+};
 
 const SYSTEM_INSTRUCTION = `
 You are the "Cosmic Morph AI Assistant", an expert in the Cosmic Morph Studio application.
@@ -15,8 +21,8 @@ Core Features:
 4. AI Synthesizer: This very interface that allows users to talk to the app and generate designs.
 
 Your Role:
-- Answer questions about the app's features and technical stack (React Three Fiber, Gemini API, Tailwind).
-- If the user asks for a new design, look, or style, you MUST include a JSON block in your response using the 'MorphState' schema.
+- Answer questions about the app's features and technical stack.
+- If the user asks for a new design, look, or style, you MUST include a JSON block in your response.
 - Always be futuristic, helpful, and concise.
 
 MorphState JSON Schema:
@@ -30,14 +36,26 @@ MorphState JSON Schema:
 `;
 
 export const chatWithAssistant = async (prompt: string, history: { role: 'user' | 'model', parts: { text: string }[] }[]) => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-3-flash-preview',
-    contents: [...history, { role: 'user', parts: [{ text: prompt }] }],
-    config: {
-      systemInstruction: SYSTEM_INSTRUCTION,
-      temperature: 0.7,
-    }
-  });
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    return "API Key not detected. Please ensure environment variables are configured.";
+  }
 
-  return response.text || '';
+  const ai = new GoogleGenAI({ apiKey });
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: [...history, { role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        temperature: 0.7,
+      }
+    });
+
+    return response.text || '';
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    return "The neural link is currently unstable. Please try again shortly.";
+  }
 };

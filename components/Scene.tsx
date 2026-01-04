@@ -20,10 +20,10 @@ interface SceneProps {
 
 export const Scene: React.FC<SceneProps> = ({ morphState }) => {
   return (
-    <div className="absolute inset-0 w-full h-full z-10">
+    <div className="absolute inset-0 w-full h-full z-10 bg-[#010103]">
       <Canvas 
         shadows 
-        dpr={[1, 1.5]} // Capped at 1.5 for production to prevent 4K screen crashes
+        dpr={[1, 1.5]}
         frameloop="always"
         gl={{ 
           antialias: true, 
@@ -31,7 +31,10 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
           powerPreference: "high-performance",
           stencil: false,
           depth: true,
-          failIfMajorPerformanceCaveat: false // Set to false to allow lower-end devices to try
+          preserveDrawingBuffer: true
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor('#010103', 0);
         }}
       >
         <PerformanceMonitor />
@@ -40,19 +43,17 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
         
         <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={45} />
         
-        {/* Core lighting is outside Suspense to guarantee visibility immediately */}
-        <ambientLight intensity={0.8} />
+        <ambientLight intensity={1.2} />
         <spotLight 
           position={[10, 10, 10]} 
           angle={0.15} 
           penumbra={1} 
-          intensity={2.5} 
+          intensity={3} 
           castShadow 
-          shadow-mapSize={[512, 512]} // Optimized shadow map size
+          shadow-mapSize={[512, 512]}
         />
-        <pointLight position={[-10, -10, -10]} intensity={1} color={morphState.color} />
+        <pointLight position={[-10, -10, -10]} intensity={1.5} color={morphState.color} />
         
-        {/* Object is NOT wrapped in the same suspense as Environment */}
         <MorphingProduct state={morphState} />
         
         <Suspense fallback={null}>
@@ -60,11 +61,11 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
         </Suspense>
 
         <ContactShadows 
-          opacity={0.4} 
+          opacity={0.5} 
           scale={10} 
           blur={2.5} 
           far={10} 
-          resolution={128} // Optimized resolution
+          resolution={128}
           color="#000000" 
           position={[0, -2.2, 0]}
         />
