@@ -17,18 +17,17 @@ interface SceneProps {
 }
 
 export const Scene: React.FC<SceneProps> = ({ morphState }) => {
-  // Use a more robust initial DPR for production displays
-  const [dpr, setDpr] = useState(typeof window !== 'undefined' ? Math.min(window.devicePixelRatio, 2) : 1);
+  const [dpr, setDpr] = useState(1);
 
   const handlePerfDecline = useCallback(() => setDpr(1), []);
   const handlePerfIncline = useCallback(() => setDpr(Math.min(window.devicePixelRatio, 2)), []);
 
   return (
-    <div className="absolute inset-0 w-full h-full z-10">
+    <div className="absolute inset-0 w-full h-full">
       <Canvas 
         shadows 
         dpr={dpr}
-        frameloop="always"
+        frameloop="always" // 'always' ensures the initial frame renders on Vercel deployment
         gl={{ 
           antialias: true, 
           alpha: true,
@@ -43,16 +42,14 @@ export const Scene: React.FC<SceneProps> = ({ morphState }) => {
         
         <PerspectiveCamera makeDefault position={[0, 0, 6]} fov={45} />
         
-        {/* Core lighting ensures visibility even if environment textures haven't loaded yet */}
-        <ambientLight intensity={0.7} />
-        <pointLight position={[10, 10, 10]} intensity={1.5} />
-        <pointLight position={[-10, -10, -10]} intensity={1} color={morphState.color} />
+        {/* Core lighting ensures visibility even if Environment is still loading */}
+        <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={2} castShadow />
         
         <MorphingProduct state={morphState} />
         
         <Suspense fallback={null}>
-          <Environment preset={morphState.environment || 'city'} />
+          <Environment preset={morphState.environment} />
         </Suspense>
 
         <ContactShadows 
